@@ -6,11 +6,11 @@
 #include <chrono> 
 #include <thread>
 
-
-
 char** maze; 
 int num_rows;
 int num_cols;
+
+std::vector <std::thread> threads;
 
 struct pos_t {
     int i;
@@ -92,7 +92,6 @@ void clear_maze_with_delay() {
 // Recebe como entrada a posição initial e retorna um booleando indicando se a saída foi encontrada
 bool walk(pos_t pos) {
 
-        std::vector<std::thread> t;
         maze[pos.i][pos.j] = 'o';
 
         clear_maze_with_delay();
@@ -147,18 +146,18 @@ bool walk(pos_t pos) {
             return true;
         }}
 
-        if(valid_positions.size()>1){
+      if(valid_positions.size()>1){
 
             maze[pos.i][pos.j] = '.';
 
-            for (int i = 0; i < valid_positions.size(); i++){
-                std::thread aux(valid_positions.top());
-                aux.detach();
+            for (int i = 0; i < valid_positions.size()-1; i++){
+                std::thread aux(walk,valid_positions.top());
+                threads.push_back(std::move(aux));
                 valid_positions.pop();
             }
         }
 
-        else if (!valid_positions.empty()) {
+        if (!valid_positions.empty()) {
             pos_t next_position = valid_positions.top();
             valid_positions.pop();
             maze[pos.i][pos.j] = '.';
@@ -172,7 +171,13 @@ bool walk(pos_t pos) {
 int main(int argc, char* argv[]) {
    
     pos_t initial_pos = load_maze("/workspaces/maze_runner/data/maze2.txt").init;
+    
     bool exit_found = walk(initial_pos);
+
+    for (std::thread & th : threads)
+{
+        th.join();
+}
 
     return 0;
 };
