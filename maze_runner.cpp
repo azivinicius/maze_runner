@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stack>
-#include <cstdlib>
+#include <iostream>
+#include <vector>
+#include <chrono> 
+#include <thread>
 
 
 
@@ -77,14 +80,22 @@ void clear_maze() {
     #endif
 }
 
+void clear_maze_with_delay() {
+    // Espera 30 milissegundos (30ms)
+    clear_maze();
+    std::this_thread::sleep_for(std::chrono::milliseconds(80));
+
+    // Limpa a tela e imprime o próximo estado do labirinto
+    print_maze();
+}
 // Função responsável pela navegação.
 // Recebe como entrada a posição initial e retorna um booleando indicando se a saída foi encontrada
 bool walk(pos_t pos) {
 
+        std::vector<std::thread> t;
+        maze[pos.i][pos.j] = 'o';
 
-        maze[pos.i][pos.j] = '.';
-
-        print_maze();
+        clear_maze_with_delay();
 
         pos_t aux;
         // avalia baixo
@@ -136,10 +147,21 @@ bool walk(pos_t pos) {
             return true;
         }}
 
-        if (!valid_positions.empty()) {
+        if(valid_positions.size()>1){
+
+            maze[pos.i][pos.j] = '.';
+
+            for (int i = 0; i < valid_positions.size(); i++){
+                std::thread aux(valid_positions.top());
+                aux.detach();
+                valid_positions.pop();
+            }
+        }
+
+        else if (!valid_positions.empty()) {
             pos_t next_position = valid_positions.top();
             valid_positions.pop();
-            clear_maze();
+            maze[pos.i][pos.j] = '.';
             walk(next_position);
         }
 
